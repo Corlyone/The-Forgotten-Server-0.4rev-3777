@@ -390,7 +390,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 
 		case ATTR_ATTACK:
 		{
-			int32_t attack;
+			int32_t attack = 0;
 			if(!propStream.getLong((uint32_t&)attack))
 				return ATTR_READ_ERROR;
 
@@ -400,7 +400,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 
 		case ATTR_EXTRAATTACK:
 		{
-			int32_t attack;
+			int32_t attack = 0;
 			if(!propStream.getLong((uint32_t&)attack))
 				return ATTR_READ_ERROR;
 
@@ -410,7 +410,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 
 		case ATTR_DEFENSE:
 		{
-			int32_t defense;
+			int32_t defense = 0;
 			if(!propStream.getLong((uint32_t&)defense))
 				return ATTR_READ_ERROR;
 
@@ -420,7 +420,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 
 		case ATTR_EXTRADEFENSE:
 		{
-			int32_t defense;
+			int32_t defense = 0;
 			if(!propStream.getLong((uint32_t&)defense))
 				return ATTR_READ_ERROR;
 
@@ -430,7 +430,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 
 		case ATTR_ARMOR:
 		{
-			int32_t armor;
+			int32_t armor = 0;
 			if(!propStream.getLong((uint32_t&)armor))
 				return ATTR_READ_ERROR;
 
@@ -440,7 +440,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 
 		case ATTR_ATTACKSPEED:
 		{
-			int32_t attackSpeed;
+			int32_t attackSpeed = 0;
 			if(!propStream.getLong((uint32_t&)attackSpeed))
 				return ATTR_READ_ERROR;
 
@@ -450,7 +450,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 
 		case ATTR_HITCHANCE:
 		{
-			int32_t hitChance;
+			int32_t hitChance = 0;
 			if(!propStream.getLong((uint32_t&)hitChance))
 				return ATTR_READ_ERROR;
 
@@ -490,7 +490,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 
 		case ATTR_WRITTENDATE:
 		{
-			int32_t date;
+			int32_t date = 0;
 			if(!propStream.getLong((uint32_t&)date))
 				return ATTR_READ_ERROR;
 
@@ -540,7 +540,7 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 
 		case ATTR_DURATION:
 		{
-			int32_t duration;
+			int32_t duration = 0;
 			if(!propStream.getLong((uint32_t&)duration))
 				return ATTR_READ_ERROR;
 

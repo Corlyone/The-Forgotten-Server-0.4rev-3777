@@ -211,7 +211,8 @@ class PropStream
 			return true;
 		}
 
-		inline bool getByte(uint8_t& ret) {return getType(ret);}
+		inline bool get(uint8_t& ret) {return getType(ret);}
+		inline bool getByte(uint8_t& ret) { return getType(ret); }
 		inline bool getShort(uint16_t& ret) {return getType(ret);}
 		inline bool getTime(time_t& ret) {return getType(ret);}
 		inline bool getLong(uint32_t& ret) {return getType(ret);}

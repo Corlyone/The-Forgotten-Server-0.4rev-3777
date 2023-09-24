@@ -49,7 +49,7 @@ class DatabaseSQLite : public _Database
 
 		DATABASE_VIRTUAL std::string getStringComparer() {return "LIKE ";}
 		DATABASE_VIRTUAL std::string getUpdateLimiter() {return ";";}
-		DATABASE_VIRTUAL DatabaseEngine_t getDatabaseEngine() {return DATABASE_ENGINE_SQLITE;}
+		DATABASE_VIRTUAL DatabaseEngine_t getDatabaseEngine() {return DATABASE_ENGINE_MYSQL;}
 
 	protected:
 		std::string _parse(const std::string& s);

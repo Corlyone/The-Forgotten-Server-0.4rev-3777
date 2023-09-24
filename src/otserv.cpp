@@ -32,10 +32,6 @@
 
 #include <boost/config.hpp>
 
-#include <openssl/rsa.h>
-#include <openssl/bn.h>
-#include <openssl/err.h>
-
 #include "server.h"
 #ifdef __LOGIN_SERVER__
 #include "gameservers.h"
@@ -60,6 +56,7 @@
 #include "configmanager.h"
 #include "scriptmanager.h"
 #include "databasemanager.h"
+#include "rsa.h"
 
 #include "iologindata.h"
 #include "ioban.h"
@@ -91,12 +88,12 @@ inline void boost::throw_exception(std::exception const & e)
 }
 #endif
 
-RSA* g_RSA;
 ConfigManager g_config;
 Game g_game;
 Chat g_chat;
 Monsters g_monsters;
 Npcs g_npcs;
+RSA g_RSA;
 
 boost::mutex g_loaderLock;
 boost::condition_variable g_loaderSignal;
@@ -507,7 +504,7 @@ void otserv(StringVec, ServiceManager* services)
 		boost::this_thread::sleep(boost::posix_time::seconds(15));
 	}
 
-	std::clog << ">> Checking software version...";
+	/*std::clog << ">> Checking software version...";
 	if(VERSION_BUILD)
 	{
 		if(xmlDocPtr doc = xmlParseFile(VERSION_CHECK))
@@ -572,41 +569,12 @@ void otserv(StringVec, ServiceManager* services)
 			std::clog << "failed - could not parse remote file (are you connected to any network?)" << std::endl;
 	}
 	else
-		std::clog << std::endl << "> Ignoring version check, using SVN" << std::endl;
+		std::clog << std::endl << "> Ignoring version check, using SVN" << std::endl;*/
 
 	std::clog << ">> Loading RSA key";
-	g_RSA = RSA_new();
-
-	BN_dec2bn(&g_RSA->p, g_config.getString(ConfigManager::RSA_PRIME1).c_str());
-	BN_dec2bn(&g_RSA->q, g_config.getString(ConfigManager::RSA_PRIME2).c_str());
-	BN_dec2bn(&g_RSA->d, g_config.getString(ConfigManager::RSA_PRIVATE).c_str());
-	BN_dec2bn(&g_RSA->n, g_config.getString(ConfigManager::RSA_MODULUS).c_str());
-	BN_dec2bn(&g_RSA->e, g_config.getString(ConfigManager::RSA_PUBLIC).c_str());
-
-	// This check will verify keys set in config.lua
-	if(RSA_check_key(g_RSA))
-	{
-		std::clog << std::endl << "> Calculating dmp1, dmq1 and iqmp for RSA...";
-
-		// Ok, now we calculate a few things, dmp1, dmq1 and iqmp
-		BN_CTX* ctx = BN_CTX_new();
-		BN_CTX_start(ctx);
-
-		BIGNUM *r1 = BN_CTX_get(ctx), *r2 = BN_CTX_get(ctx);
-		BN_mod(g_RSA->dmp1, g_RSA->d, r1, ctx);
-		BN_mod(g_RSA->dmq1, g_RSA->d, r2, ctx);
-
-		BN_mod_inverse(g_RSA->iqmp, g_RSA->q, g_RSA->p, ctx);
-		std::clog << " done" << std::endl;
-	}
-	else
-	{
-		ERR_load_crypto_strings();
-		std::stringstream s;
-
-		s << std::endl << "> OpenSSL failed - " << ERR_error_string(ERR_get_error(), NULL);
-		startupErrorMessage(s.str());
-	}
+	const char* p("9676055583941534782034910386700602443655464926278482610994790503721768729009269269729778741593024305085781544238376878361183028314621511038778562681318299");
+	const char* q("9022190964614760848811048811067757936140466639459391748593820751360903230262637529561182377806690478165231716531221654024928487607774434782084482264317649");
+	g_RSA.setKey(p, q);
 
 	std::clog << ">> Starting SQL connection" << std::endl;
 	Database* db = Database::getInstance();

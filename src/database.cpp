@@ -21,9 +21,6 @@
 #ifdef __USE_MYSQL__
 #include "databasemysql.h"
 #endif
-#ifdef __USE_SQLITE__
-#include "databasesqlite.h"
-#endif
 #ifdef __USE_PGSQL__
 #include "databasepgsql.h"
 #endif
@@ -48,10 +45,6 @@ Database* _Database::getInstance()
 #ifdef __USE_MYSQLPP__
 		else if(g_config.getString(ConfigManager::SQL_TYPE) == "mysql++")
 			m_instance = new DatabaseMySQLpp;
-#endif
-#ifdef __USE_SQLITE__
-		else if(g_config.getString(ConfigManager::SQL_TYPE) == "sqlite")
-			m_instance = new DatabaseSQLite;
 #endif
 #ifdef __USE_PGSQL__
 		else if(g_config.getString(ConfigManager::SQL_TYPE) == "pgsql")

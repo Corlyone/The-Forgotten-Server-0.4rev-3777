@@ -270,6 +270,9 @@
     <ClInclude Include="..\weapons.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\rsa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\actions.cpp">
@@ -501,6 +504,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\weapons.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\rsa.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

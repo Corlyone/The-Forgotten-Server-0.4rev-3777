@@ -33,6 +33,8 @@
 
 #include "configmanager.h"
 #include "game.h"
+#include <algorithm>
+#include <random>
 
 extern ConfigManager g_config;
 extern Game g_game;
@@ -2056,16 +2058,21 @@ bool Npc::canWalkTo(const Position& fromPos, Direction dir)
 bool Npc::getRandomStep(Direction& dir)
 {
 	std::vector<Direction> dirList;
-	for(int32_t i = NORTH; i < SOUTHWEST; ++i)
+	for (int32_t i = NORTH; i < SOUTHWEST; ++i)
 	{
-		if(canWalkTo(getPosition(), (Direction)i))
+		if (canWalkTo(getPosition(), (Direction)i))
 			dirList.push_back((Direction)i);
 	}
 
-	if(dirList.empty())
+	if (dirList.empty())
 		return false;
 
-	std::random_shuffle(dirList.begin(), dirList.end());
+	std::random_device rd;
+	std::default_random_engine rng(rd());
+
+	// Utiliza std::shuffle para aleatorizar el orden de los elementos en dirList
+	std::shuffle(dirList.begin(), dirList.end(), rng);
+
 	dir = dirList[random_range(0, dirList.size() - 1)];
 	return true;
 }

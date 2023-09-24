@@ -27,13 +27,13 @@
 #define CLIENT_VERSION_PIC 0
 //#define CLIENT_VERSION_DATA
 
-#define SOFTWARE_NAME "TFS 0.4 - Revisado"
-#define SOFTWARE_VERSION "[CHAITOSOFT.COM]"
+#define SOFTWARE_NAME "TFS 0.4 - Revisado por NvSo"
+#define SOFTWARE_VERSION "0.1"
 #define SOFTWARE_CODENAME "Crying Damson"
 #define SOFTWARE_DEVELOPERS "Elf, Talaturen, Dalkon, BeniS, Tryller and Kornholijo"
 #define SOFTWARE_PROTOCOL "8.60"
 
-#define VERSION_CHECK "http://forgottenserver.otland.net/version.xml"
+#define VERSION_CHECK ""
 #define VERSION_PATCH 0
 #define VERSION_TIMESTAMP 1357518165
 #define VERSION_BUILD 0

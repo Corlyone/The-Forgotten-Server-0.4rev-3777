@@ -1941,7 +1941,7 @@ void Items::parseRandomizationBlock(int32_t id, int32_t fromId, int32_t toId, in
 		return;
 	}
 
-	RandomizationBlock rand;
+	RandomizationBlock rand{};
 	rand.fromRange = fromId;
 	rand.toRange = toId;
 

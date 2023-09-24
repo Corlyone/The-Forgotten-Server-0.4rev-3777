@@ -1053,7 +1053,7 @@ bool ConditionDamage::addDamage(int32_t rounds, int32_t time, int32_t value)
 	//rounds, time, damage
 	for(int32_t i = 0; i < rounds; ++i)
 	{
-		IntervalInfo damageInfo;
+		IntervalInfo damageInfo{};
 		damageInfo.interval = time;
 		damageInfo.timeLeft = time;
 		damageInfo.value = value;

@@ -26,8 +26,8 @@
 #include "connection.h"
 #include "outputmessage.h"
 
-#include <openssl/rsa.h>
-extern RSA* g_RSA;
+#include "rsa.h"
+extern RSA g_RSA;
 
 void Protocol::onSendMessage(OutputMessage_ptr msg)
 {
@@ -190,7 +190,7 @@ bool Protocol::RSA_decrypt(NetworkMessage& msg)
 	}
 
 	uint16_t size = msg.size();
-	RSA_private_decrypt(128, (uint8_t*)(msg.buffer() + msg.position()), (uint8_t*)msg.buffer(), g_RSA, RSA_NO_PADDING);
+	g_RSA.decrypt(reinterpret_cast<char*>(msg.size()) + msg.position()); //does not break strict aliasing
 	msg.setSize(size);
 
 	msg.setPosition(0);

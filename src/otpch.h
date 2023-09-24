@@ -30,6 +30,8 @@
 #include <libxml/parser.h>
 #include <libxml/threads.h>
 
+#include <pugixml.hpp>
+
 //boost
 #include <boost/config.hpp>
 #include <boost/function.hpp>
