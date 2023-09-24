@@ -21,8 +21,8 @@
 #ifdef __USE_MYSQL__
 #include "databasemysql.h"
 #endif
-#ifdef __USE_PGSQL__
-#include "databasepgsql.h"
+#ifdef __USE_SQLITE__
+#include "databasesqlite.h"
 #endif
 
 #if defined MULTI_SQL_DRIVERS
@@ -31,61 +31,68 @@ extern ConfigManager g_config;
 #endif
 
 boost::recursive_mutex DBQuery::databaseLock;
-Database* _Database::m_instance = NULL;
+Database* _Database::_instance = NULL;
 
 Database* _Database::getInstance()
 {
-	if(!m_instance)
+	if (!_instance)
 	{
 #if defined MULTI_SQL_DRIVERS
 #ifdef __USE_MYSQL__
-		if(g_config.getString(ConfigManager::SQL_TYPE) == "mysql")
-			m_instance = new DatabaseMySQL;
+		if (g_config.getString(ConfigManager::SQL_TYPE) == "mysql")
+			_instance = new DatabaseMySQL;
 #endif
-#ifdef __USE_MYSQLPP__
-		else if(g_config.getString(ConfigManager::SQL_TYPE) == "mysql++")
-			m_instance = new DatabaseMySQLpp;
-#endif
-#ifdef __USE_PGSQL__
-		else if(g_config.getString(ConfigManager::SQL_TYPE) == "pgsql")
-			m_instance = new DatabasePgSQL;
+#ifdef __USE_SQLITE__
+		if (g_config.getString(ConfigManager::SQL_TYPE) == "sqlite")
+			_instance = new DatabaseSQLite;
 #endif
 #else
-		m_instance = new Database;
+		_instance = new Database;
 #endif
 	}
 
-	m_instance->use();
-	return m_instance;
+	_instance->use();
+	return _instance;
 }
 
 DBResult* _Database::verifyResult(DBResult* result)
 {
-	if(result->next())
+	if (result->next())
 		return result;
 
 	result->free();
+	result = NULL;
 	return NULL;
 }
 
-void DBInsert::setQuery(std::string query)
+DBInsert::DBInsert(Database* db)
+{
+	m_db = db;
+	m_rows = 0;
+	// checks if current database engine supports multiline INSERTs
+	m_multiLine = m_db->getParam(DBPARAM_MULTIINSERT);
+}
+
+void DBInsert::setQuery(const std::string& query)
 {
 	m_query = query;
 	m_buf = "";
 	m_rows = 0;
 }
 
-bool DBInsert::addRow(std::string row)
+bool DBInsert::addRow(const std::string& row)
 {
-	if(!m_db->multiLine())
+	if (!m_multiLine) // executes INSERT for current row
 		return m_db->query(m_query + "(" + row + ")");
 
-	++m_rows;
-	if(m_buf.empty())
+	m_rows++;
+	int32_t size = m_buf.length();
+	// adds new row to buffer
+	if (!size)
 		m_buf = "(" + row + ")";
-	else if(m_buf.length() > 8192)
+	else if (size > 8192)
 	{
-		if(!execute())
+		if (!execute())
 			return false;
 
 		m_buf = "(" + row + ")";
@@ -105,10 +112,11 @@ bool DBInsert::addRow(std::stringstream& row)
 
 bool DBInsert::execute()
 {
-	if(!m_db->multiLine() || m_buf.empty() || !m_rows)
+	if (!m_multiLine || m_buf.length() < 1 || !m_rows) // INSERTs were executed on-fly or there's no rows to execute
 		return true;
 
 	m_rows = 0;
+	// executes buffer
 	bool ret = m_db->query(m_query + m_buf);
 	m_buf = "";
 	return ret;

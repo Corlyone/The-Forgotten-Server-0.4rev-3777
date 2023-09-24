@@ -127,7 +127,7 @@ void ConnectionManager::addAttempt(uint32_t clientIp, int32_t protocolId, bool s
 
 		ipLoginMap[clientIp] = tmp;
 		it = ipLoginMap.find(clientIp);
-	}
+        }
 
 	if(it->second.loginsAmount > g_config.getNumber(ConfigManager::LOGIN_TRIES))
 		it->second.loginsAmount = 0;
@@ -160,7 +160,7 @@ bool ConnectionManager::acceptConnection(uint32_t clientIp)
 
 		ipConnectMap[clientIp] = tmp;
 		return true;
-	}
+        }
 
 	it->second.count++;
 	if(it->second.blockTime > currentTime)
@@ -320,7 +320,11 @@ void Connection::accept()
 	try
 	{
 		++m_pendingRead;
+#ifdef __USE_DEVCPP__
+		m_readTimer.expires_from_now(boost::posix_time::seconds(Connection::readTimeout));
+#else
 		m_readTimer.expires_from_now(boost::posix_time::seconds(CONNECTION_READ_TIMEOUT));
+#endif
 		m_readTimer.async_wait(boost::bind(&Connection::handleReadTimeout,
 			boost::weak_ptr<Connection>(shared_from_this()), boost::asio::placeholders::error));
 
@@ -360,7 +364,11 @@ void Connection::parseHeader(const boost::system::error_code& error)
 	try
 	{
 		++m_pendingRead;
+#ifdef __USE_DEVCPP__
+		m_readTimer.expires_from_now(boost::posix_time::seconds(Connection::readTimeout));
+#else
 		m_readTimer.expires_from_now(boost::posix_time::seconds(CONNECTION_READ_TIMEOUT));
+#endif
 		m_readTimer.async_wait(boost::bind(&Connection::handleReadTimeout,
 			boost::weak_ptr<Connection>(shared_from_this()), boost::asio::placeholders::error));
 
@@ -436,7 +444,11 @@ void Connection::parsePacket(const boost::system::error_code& error)
 	try
 	{
 		++m_pendingRead;
+#ifdef __USE_DEVCPP__
+		m_readTimer.expires_from_now(boost::posix_time::seconds(Connection::readTimeout));
+#else
 		m_readTimer.expires_from_now(boost::posix_time::seconds(CONNECTION_READ_TIMEOUT));
+#endif
 		m_readTimer.async_wait(boost::bind(&Connection::handleReadTimeout,
 			boost::weak_ptr<Connection>(shared_from_this()), boost::asio::placeholders::error));
 
@@ -487,7 +499,7 @@ bool Connection::send(OutputMessage_ptr msg)
 		close();
 	}
 	else
-	{
+	{	
 		#ifdef __DEBUG_NET__
 		std::clog << "Connection::send Adding to queue " << msg->size() << std::endl;
 		#endif
@@ -504,7 +516,11 @@ void Connection::internalSend(OutputMessage_ptr msg)
 	try
 	{
 		++m_pendingWrite;
+#ifdef __USE_DEVCPP__
+		m_readTimer.expires_from_now(boost::posix_time::seconds(Connection::writeTimeout));
+#else
 		m_writeTimer.expires_from_now(boost::posix_time::seconds(CONNECTION_WRITE_TIMEOUT));
+#endif
 		m_writeTimer.async_wait(boost::bind(&Connection::handleWriteTimeout,
 			boost::weak_ptr<Connection>(shared_from_this()), boost::asio::placeholders::error));
 
@@ -531,18 +547,6 @@ uint32_t Connection::getIP() const
 		return htonl(ip.address().to_v4().to_ulong());
 
 	PRINT_ASIO_ERROR("Getting remote ip");
-	return 0;
-}
-
-uint32_t Connection::getEndpoint() const
-{
-	//ip is expressed in network byte order
-	boost::system::error_code error;
-	const boost::asio::ip::tcp::endpoint ip = m_socket->local_endpoint(error);
-	if(!error)
-		return htonl(ip.address().to_v4().to_ulong());
-
-	PRINT_ASIO_ERROR("Getting local ip");
 	return 0;
 }
 
@@ -667,4 +671,3 @@ void Connection::handleWriteTimeout(boost::weak_ptr<Connection> weak, const boos
 		connection->onWriteTimeout();
 	}
 }
-

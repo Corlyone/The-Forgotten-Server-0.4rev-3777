@@ -37,9 +37,9 @@ std::string transformToMD5(std::string plainText, bool upperCase)
 	uint8_t md[MD5_DIGEST_LENGTH];
 	MD5_Final(md, &c);
 
-	char output[(MD5_DIGEST_LENGTH << 1) + 1];
-	for(int32_t i = 0; i < (int32_t)sizeof(md); ++i)
-		sprintf(output + (i << 1), "%.2X", md[i]);
+	char output[MD5_DIGEST_LENGTH * 2 + 1] = "";
+	for(int32_t i = 0; i < static_cast<int32_t>(sizeof(md)); i++)
+		sprintf(output, "%s%.2X", output, md[i]);
 
 	if(upperCase)
 		return std::string(output);
@@ -56,9 +56,9 @@ std::string transformToSHA1(std::string plainText, bool upperCase)
 	uint8_t md[SHA_DIGEST_LENGTH];
 	SHA1_Final(md, &c);
 
-	char output[(SHA_DIGEST_LENGTH << 1) + 1];
-	for(int32_t i = 0; i < (int32_t)sizeof(md); ++i)
-		sprintf(output + (i << 1), "%.2X", md[i]);
+	char output[SHA_DIGEST_LENGTH * 2 + 1] = "";
+	for(int32_t i = 0; i < static_cast<int32_t>(sizeof(md)); i++)
+		sprintf(output, "%s%.2X", output, md[i]);
 
 	if(upperCase)
 		return std::string(output);
@@ -75,9 +75,9 @@ std::string transformToSHA256(std::string plainText, bool upperCase)
 	uint8_t md[SHA256_DIGEST_LENGTH];
 	SHA256_Final(md, &c);
 
-	char output[(SHA256_DIGEST_LENGTH << 1) + 1];
-	for(int32_t i = 0; i < (int32_t)sizeof(md); ++i)
-		sprintf(output + (i << 1), "%.2X", md[i]);
+	char output[SHA256_DIGEST_LENGTH * 2 + 1] = "";
+	for(int32_t i = 0; i < static_cast<int32_t>(sizeof(md)); i++)
+		sprintf(output, "%s%.2X", output, md[i]);
 
 	if(upperCase)
 		return std::string(output);
@@ -94,9 +94,9 @@ std::string transformToSHA512(std::string plainText, bool upperCase)
 	uint8_t md[SHA512_DIGEST_LENGTH];
 	SHA512_Final(md, &c);
 
-	char output[(SHA512_DIGEST_LENGTH << 1) + 1];
-	for(int32_t i = 0; i < (int32_t)sizeof(md); ++i)
-		sprintf(output + (i << 1), "%.2X", md[i]);
+	char output[SHA512_DIGEST_LENGTH * 2 + 1] = "";
+	for(int32_t i = 0; i < static_cast<int32_t>(sizeof(md)); i++)
+		sprintf(output, "%s%.2X", output, md[i]);
 
 	if(upperCase)
 		return std::string(output);
@@ -146,6 +146,7 @@ bool replaceString(std::string& text, const std::string& key, const std::string&
 	while((start = text.find(key, pos)) != std::string::npos)
 	{
 		text.replace(start, key.size(), value);
+		//text = text.substr(0, start) + value + text.substr(start + key.size());
 		pos = start + value.size();
 	}
 
@@ -190,37 +191,6 @@ bool booleanString(std::string source)
 {
 	toLowerCaseString(source);
 	return (source == "yes" || source == "true" || atoi(source.c_str()) > 0);
-}
-
-std::string ucfirst(std::string source)
-{
-	for(uint16_t i = 0; i < (uint16_t)source.length(); ++i)
-	{
-		if(source[i] != ' ')
-		{
-			source[i] = upchar(source[i]);
-			break;
-		}
-	}
-
-	return source;
-}
-
-std::string ucwords(std::string source)
-{
-	bool tmp = true;
-	for(uint16_t i = 0; i < (uint16_t)source.length(); ++i)
-	{
-		if(source[i] == ' ')
-			tmp = true;
-		else if(tmp)
-		{
-			source[i] = upchar(source[i]);
-			tmp = false;
-		}
-	}
-
-	return source;
 }
 
 bool readXMLInteger(xmlNodePtr node, const char* tag, int32_t& value)
@@ -327,78 +297,41 @@ std::string getLastXMLError()
 	return ss.str();
 }
 
-bool utf8ToLatin1(char* inText, std::string& outText)
+bool utf8ToLatin1(char* intext, std::string& outtext)
 {
-	outText = "";
-	if(!inText)
+	outtext = "";
+	if(!intext)
 		return false;
 
-	int32_t inLen = strlen(inText);
-	if(!inLen)
+	int32_t inlen = strlen(intext);
+	if(!inlen)
 		return false;
 
-	int32_t outLen = inLen << 1;
-	uint8_t* outBuf = new uint8_t[outLen];
+	int32_t outlen = inlen * 2;
+	uint8_t* outbuf = new uint8_t[outlen];
 
-	int32_t res = UTF8Toisolat1(outBuf, &outLen, (uint8_t*)inText, &inLen);
+	int32_t res = UTF8Toisolat1(outbuf, &outlen, (uint8_t*)intext, &inlen);
 	if(res < 0)
 	{
-		delete[] outBuf;
+		delete[] outbuf;
 		return false;
 	}
 
-	outBuf[outLen] = '\0';
-	outText = (char*)outBuf;
+	outbuf[outlen] = '\0';
+	outtext = (char*)outbuf;
 
-	delete[] outBuf;
+	delete[] outbuf;
 	return true;
 }
 
-bool latin1ToUtf8(char* inText, std::string& outText)
-{
-	outText = "";
-	if(!inText)
-		return false;
-
-	int32_t inLen = strlen(inText);
-	if(!inLen)
-		return false;
-
-	int32_t outLen = inLen << 1;
-	uint8_t* outBuf = new uint8_t[outLen];
-
-	int32_t res = isolat1ToUTF8(outBuf, &outLen, (uint8_t*)inText, &inLen);
-	if(res < 0)
-	{
-		delete[] outBuf;
-		return false;
-	}
-
-	outBuf[outLen] = '\0';
-	outText = (char*)outBuf;
-
-	delete[] outBuf;
-	return true;
-}
-
-StringVec explodeString(const std::string& string, const std::string& separator, bool trim/* = true*/, uint16_t limit/* = 0*/)
+StringVec explodeString(const std::string& string, const std::string& separator)
 {
 	StringVec returnVector;
 	size_t start = 0, end = 0;
-
-	uint16_t i = 1;
 	while((end = string.find(separator, start)) != std::string::npos)
 	{
-		std::string t = string.substr(start, end - start);
-		if(trim)
-			trimString(t);
-
-		returnVector.push_back(t);
+		returnVector.push_back(string.substr(start, end - start));
 		start = end + separator.size();
-
-		++i;
-		if(limit > 0 && i > limit)
-			break;
 	}
 
 	returnVector.push_back(string.substr(start));
@@ -409,11 +342,7 @@ IntegerVec vectorAtoi(StringVec stringVector)
 {
 	IntegerVec returnVector;
 	for(StringVec::iterator it = stringVector.begin(); it != stringVector.end(); ++it)
-	{
-		int32_t number = atoi((*it).c_str());
-		if(number || (*it) == "0")
-			returnVector.push_back(number);
-	}
+		returnVector.push_back(atoi((*it).c_str()));
 
 	return returnVector;
 }
@@ -425,7 +354,7 @@ bool hasBitSet(uint32_t flag, uint32_t flags)
 
 uint32_t rand24b()
 {
-	return ((rand() << 12) ^ rand()) & 0xFFFFFF;
+	return ((rand() << 12) ^ (rand())) & (0xFFFFFF);
 }
 
 float box_muller(float m, float s)
@@ -634,7 +563,7 @@ std::string generateRecoveryKey(int32_t fieldCount, int32_t fieldLenght, bool mi
 		do
 		{
 			madeNumber = madeCharacter = false;
-			if((mixCase && !random_range(0, 2)) || (!mixCase && !random_range(0, 1)))
+			if((mixCase && !random_range(0, 2)) || (!mixCase && (bool)random_range(0, 1)))
 			{
 				number = random_range(2, 9);
 				if(number != lastNumber)
@@ -646,7 +575,7 @@ std::string generateRecoveryKey(int32_t fieldCount, int32_t fieldLenght, bool mi
 			}
 			else
 			{
-				if(mixCase && !random_range(0, 1))
+				if(mixCase && (bool)random_range(0,1) )
 					character = (char)random_range(97, 122);
 				else
 					character = (char)random_range(65, 90);
@@ -729,12 +658,9 @@ std::string formatDateEx(time_t _time/* = 0*/, std::string format/* = "%d %b %Y,
 	return buffer;
 }
 
-std::string formatTime(time_t _time/* = 0*/, bool ms/* = false*/)
+std::string currentTimeString()
 {
-	if(!_time)
-		_time = time(NULL);
-	else if(ms)
-		ms = false;
+	time_t _time = time(NULL);
 
 	const tm* tms = localtime(&_time);
 	std::stringstream s;
@@ -745,20 +671,6 @@ std::string formatTime(time_t _time/* = 0*/, bool ms/* = false*/)
 			s << "0";
 
 		s << tms->tm_sec;
-		if(ms)
-		{
-			timeb t;
-			ftime(&t);
-
-			s << "."; // make it format zzz
-			if(t.millitm < 10)
-				s << "0";
-
-			if(t.millitm < 100)
-				s << "0";
-
-			s << t.millitm;
-		}
 	}
 	else
 		s << "UNIX Time: " << (int32_t)_time;
@@ -1014,107 +926,101 @@ struct SkillIdNames
 	skills_t skillId;
 };
 
-struct WeaponTypeNames
-{
-	const char* name;
-	WeaponType_t weaponType;
-};
-
 MagicEffectNames magicEffectNames[] =
 {
-	{"redspark",			MAGIC_EFFECT_DRAW_BLOOD},
-	{"bluebubble",			MAGIC_EFFECT_LOSE_ENERGY},
-	{"poff",				MAGIC_EFFECT_POFF},
-	{"yellowspark",			MAGIC_EFFECT_BLOCKHIT},
-	{"explosionarea",		MAGIC_EFFECT_EXPLOSION_AREA},
-	{"explosion",			MAGIC_EFFECT_EXPLOSION_DAMAGE},
-	{"firearea",			MAGIC_EFFECT_FIRE_AREA},
-	{"yellowbubble",		MAGIC_EFFECT_YELLOW_RINGS},
-	{"greenbubble",			MAGIC_EFFECT_POISON_RINGS},
-	{"blackspark",			MAGIC_EFFECT_HIT_AREA},
-	{"teleport",			MAGIC_EFFECT_TELEPORT},
-	{"energy",				MAGIC_EFFECT_ENERGY_DAMAGE},
-	{"blueshimmer",			MAGIC_EFFECT_WRAPS_BLUE},
-	{"redshimmer",			MAGIC_EFFECT_WRAPS_RED},
-	{"greenshimmer",		MAGIC_EFFECT_WRAPS_GREEN},
-	{"fire",				MAGIC_EFFECT_HITBY_FIRE},
-	{"greenspark",			MAGIC_EFFECT_POISON},
-	{"mortarea",			MAGIC_EFFECT_MORT_AREA},
-	{"greennote",			MAGIC_EFFECT_SOUND_GREEN},
-	{"rednote",				MAGIC_EFFECT_SOUND_RED},
-	{"poison",				MAGIC_EFFECT_POISON_AREA},
-	{"yellownote",			MAGIC_EFFECT_SOUND_YELLOW},
-	{"purplenote",			MAGIC_EFFECT_SOUND_PURPLE},
-	{"bluenote",			MAGIC_EFFECT_SOUND_BLUE},
-	{"whitenote",			MAGIC_EFFECT_SOUND_WHITE},
-	{"bubbles",				MAGIC_EFFECT_BUBBLES},
-	{"dice",				MAGIC_EFFECT_CRAPS},
-	{"giftwraps",			MAGIC_EFFECT_GIFT_WRAPS},
-	{"yellowfirework",		MAGIC_EFFECT_FIREWORK_YELLOW},
-	{"redfirework",			MAGIC_EFFECT_FIREWORK_RED},
-	{"bluefirework",		MAGIC_EFFECT_FIREWORK_BLUE},
-	{"stun",				MAGIC_EFFECT_STUN},
-	{"sleep",				MAGIC_EFFECT_SLEEP},
-	{"watercreature",		MAGIC_EFFECT_WATERCREATURE},
-	{"groundshaker",		MAGIC_EFFECT_GROUNDSHAKER},
-	{"hearts",				MAGIC_EFFECT_HEARTS},
-	{"fireattack",			MAGIC_EFFECT_FIREATTACK},
-	{"energyarea",			MAGIC_EFFECT_ENERGY_AREA},
-	{"smallclouds",			MAGIC_EFFECT_SMALLCLOUDS},
-	{"holydamage",			MAGIC_EFFECT_HOLYDAMAGE},
-	{"bigclouds",			MAGIC_EFFECT_BIGCLOUDS},
-	{"icearea",				MAGIC_EFFECT_ICEAREA},
-	{"icetornado",			MAGIC_EFFECT_ICETORNADO},
-	{"iceattack",			MAGIC_EFFECT_ICEATTACK},
-	{"stones",				MAGIC_EFFECT_STONES},
-	{"smallplants",			MAGIC_EFFECT_SMALLPLANTS},
-	{"carniphila",			MAGIC_EFFECT_CARNIPHILA},
-	{"purpleenergy",		MAGIC_EFFECT_PURPLEENERGY},
-	{"yellowenergy",		MAGIC_EFFECT_YELLOWENERGY},
-	{"holyarea",			MAGIC_EFFECT_HOLYAREA},
-	{"bigplants",			MAGIC_EFFECT_BIGPLANTS},
-	{"cake",				MAGIC_EFFECT_CAKE},
-	{"giantice",			MAGIC_EFFECT_GIANTICE},
-	{"watersplash",			MAGIC_EFFECT_WATERSPLASH},
-	{"plantattack",			MAGIC_EFFECT_PLANTATTACK},
-	{"tutorialarrow",		MAGIC_EFFECT_TUTORIALARROW},
-	{"tutorialsquare",		MAGIC_EFFECT_TUTORIALSQUARE},
+	{"redspark",		MAGIC_EFFECT_DRAW_BLOOD},
+	{"bluebubble",		MAGIC_EFFECT_LOSE_ENERGY},
+	{"poff",		MAGIC_EFFECT_POFF},
+	{"yellowspark",		MAGIC_EFFECT_BLOCKHIT},
+	{"explosionarea",	MAGIC_EFFECT_EXPLOSION_AREA},
+	{"explosion",		MAGIC_EFFECT_EXPLOSION_DAMAGE},
+	{"firearea",		MAGIC_EFFECT_FIRE_AREA},
+	{"yellowbubble",	MAGIC_EFFECT_YELLOW_RINGS},
+	{"greenbubble",		MAGIC_EFFECT_POISON_RINGS},
+	{"blackspark",		MAGIC_EFFECT_HIT_AREA},
+	{"teleport",		MAGIC_EFFECT_TELEPORT},
+	{"energy",		MAGIC_EFFECT_ENERGY_DAMAGE},
+	{"blueshimmer",		MAGIC_EFFECT_WRAPS_BLUE},
+	{"redshimmer",		MAGIC_EFFECT_WRAPS_RED},
+	{"greenshimmer",	MAGIC_EFFECT_WRAPS_GREEN},
+	{"fire",		MAGIC_EFFECT_HITBY_FIRE},
+	{"greenspark",		MAGIC_EFFECT_POISON},
+	{"mortarea",		MAGIC_EFFECT_MORT_AREA},
+	{"greennote",		MAGIC_EFFECT_SOUND_GREEN},
+	{"rednote",		MAGIC_EFFECT_SOUND_RED},
+	{"poison",		MAGIC_EFFECT_POISON_AREA},
+	{"yellownote",		MAGIC_EFFECT_SOUND_YELLOW},
+	{"purplenote",		MAGIC_EFFECT_SOUND_PURPLE},
+	{"bluenote",		MAGIC_EFFECT_SOUND_BLUE},
+	{"whitenote",		MAGIC_EFFECT_SOUND_WHITE},
+	{"bubbles",		MAGIC_EFFECT_BUBBLES},
+	{"dice",		MAGIC_EFFECT_CRAPS},
+	{"giftwraps",		MAGIC_EFFECT_GIFT_WRAPS},
+	{"yellowfirework",	MAGIC_EFFECT_FIREWORK_YELLOW},
+	{"redfirework",		MAGIC_EFFECT_FIREWORK_RED},
+	{"bluefirework",	MAGIC_EFFECT_FIREWORK_BLUE},
+	{"stun",		MAGIC_EFFECT_STUN},
+	{"sleep",		MAGIC_EFFECT_SLEEP},
+	{"watercreature",	MAGIC_EFFECT_WATERCREATURE},
+	{"groundshaker",	MAGIC_EFFECT_GROUNDSHAKER},
+	{"hearts",		MAGIC_EFFECT_HEARTS},
+	{"fireattack",		MAGIC_EFFECT_FIREATTACK},
+	{"energyarea",		MAGIC_EFFECT_ENERGY_AREA},
+	{"smallclouds",		MAGIC_EFFECT_SMALLCLOUDS},
+	{"holydamage",		MAGIC_EFFECT_HOLYDAMAGE},
+	{"bigclouds",		MAGIC_EFFECT_BIGCLOUDS},
+	{"icearea",		MAGIC_EFFECT_ICEAREA},
+	{"icetornado",		MAGIC_EFFECT_ICETORNADO},
+	{"iceattack",		MAGIC_EFFECT_ICEATTACK},
+	{"stones",		MAGIC_EFFECT_STONES},
+	{"smallplants",		MAGIC_EFFECT_SMALLPLANTS},
+	{"carniphila",		MAGIC_EFFECT_CARNIPHILA},
+	{"purpleenergy",	MAGIC_EFFECT_PURPLEENERGY},
+	{"yellowenergy",	MAGIC_EFFECT_YELLOWENERGY},
+	{"holyarea",		MAGIC_EFFECT_HOLYAREA},
+	{"bigplants",		MAGIC_EFFECT_BIGPLANTS},
+	{"cake",		MAGIC_EFFECT_CAKE},
+	{"giantice",		MAGIC_EFFECT_GIANTICE},
+	{"watersplash",		MAGIC_EFFECT_WATERSPLASH},
+	{"plantattack",		MAGIC_EFFECT_PLANTATTACK},
+	{"tutorialarrow",	MAGIC_EFFECT_TUTORIALARROW},
+	{"tutorialsquare",	MAGIC_EFFECT_TUTORIALSQUARE},
 	{"mirrorhorizontal",	MAGIC_EFFECT_MIRRORHORIZONTAL},
-	{"mirrorvertical",		MAGIC_EFFECT_MIRRORVERTICAL},
-	{"skullhorizontal",		MAGIC_EFFECT_SKULLHORIZONTAL},
-	{"skullvertical",		MAGIC_EFFECT_SKULLVERTICAL},
-	{"assassin",			MAGIC_EFFECT_ASSASSIN},
-	{"stepshorizontal",		MAGIC_EFFECT_STEPSHORIZONTAL},
-	{"bloodysteps",			MAGIC_EFFECT_BLOODYSTEPS},
-	{"stepsvertical",		MAGIC_EFFECT_STEPSVERTICAL},
-	{"yalaharighost",		MAGIC_EFFECT_YALAHARIGHOST},
-	{"bats",				MAGIC_EFFECT_BATS},
-	{"smoke",				MAGIC_EFFECT_SMOKE},
-	{"insects",				MAGIC_EFFECT_INSECTS},
-	{"dragonhead",			MAGIC_EFFECT_DRAGONHEAD}
+	{"mirrorvertical",	MAGIC_EFFECT_MIRRORVERTICAL},
+	{"skullhorizontal",	MAGIC_EFFECT_SKULLHORIZONTAL},
+	{"skullvertical",	MAGIC_EFFECT_SKULLVERTICAL},
+	{"assassin",		MAGIC_EFFECT_ASSASSIN},
+	{"stepshorizontal",	MAGIC_EFFECT_STEPSHORIZONTAL},
+	{"bloodysteps",		MAGIC_EFFECT_BLOODYSTEPS},
+	{"stepsvertical",	MAGIC_EFFECT_STEPSVERTICAL},
+	{"yalaharighost",	MAGIC_EFFECT_YALAHARIGHOST},
+	{"bats",		MAGIC_EFFECT_BATS},
+	{"smoke",		MAGIC_EFFECT_SMOKE},
+	{"insects",		MAGIC_EFFECT_INSECTS},
+	{"dragonhead",	MAGIC_EFFECT_DRAGONHEAD}
 };
 
 ShootTypeNames shootTypeNames[] =
 {
-	{"spear",			SHOOT_EFFECT_SPEAR},
-	{"bolt",			SHOOT_EFFECT_BOLT},
-	{"arrow",			SHOOT_EFFECT_ARROW},
-	{"fire",			SHOOT_EFFECT_FIRE},
-	{"energy",			SHOOT_EFFECT_ENERGY},
+	{"spear",		SHOOT_EFFECT_SPEAR},
+	{"bolt",		SHOOT_EFFECT_BOLT},
+	{"arrow",		SHOOT_EFFECT_ARROW},
+	{"fire",		SHOOT_EFFECT_FIRE},
+	{"energy",		SHOOT_EFFECT_ENERGY},
 	{"poisonarrow",		SHOOT_EFFECT_POISONARROW},
 	{"burstarrow",		SHOOT_EFFECT_BURSTARROW},
 	{"throwingstar",	SHOOT_EFFECT_THROWINGSTAR},
 	{"throwingknife",	SHOOT_EFFECT_THROWINGKNIFE},
 	{"smallstone",		SHOOT_EFFECT_SMALLSTONE},
-	{"death",			SHOOT_EFFECT_DEATH},
+	{"death",		SHOOT_EFFECT_DEATH},
 	{"largerock",		SHOOT_EFFECT_LARGEROCK},
 	{"snowball",		SHOOT_EFFECT_SNOWBALL},
 	{"powerbolt",		SHOOT_EFFECT_POWERBOLT},
-	{"poison",			SHOOT_EFFECT_POISONFIELD},
+	{"poison",		SHOOT_EFFECT_POISONFIELD},
 	{"infernalbolt",	SHOOT_EFFECT_INFERNALBOLT},
 	{"huntingspear",	SHOOT_EFFECT_HUNTINGSPEAR},
 	{"enchantedspear",	SHOOT_EFFECT_ENCHANTEDSPEAR},
-	{"redstar",			SHOOT_EFFECT_REDSTAR},
+	{"redstar",		SHOOT_EFFECT_REDSTAR},
 	{"greenstar",		SHOOT_EFFECT_GREENSTAR},
 	{"royalspear",		SHOOT_EFFECT_ROYALSPEAR},
 	{"sniperarrow",		SHOOT_EFFECT_SNIPERARROW},
@@ -1124,9 +1030,9 @@ ShootTypeNames shootTypeNames[] =
 	{"whirlwindaxe",	SHOOT_EFFECT_WHIRLWINDAXE},
 	{"whirlwindclub",	SHOOT_EFFECT_WHIRLWINDCLUB},
 	{"etherealspear",	SHOOT_EFFECT_ETHEREALSPEAR},
-	{"ice",				SHOOT_EFFECT_ICE},
-	{"earth",			SHOOT_EFFECT_EARTH},
-	{"holy",			SHOOT_EFFECT_HOLY},
+	{"ice",			SHOOT_EFFECT_ICE},
+	{"earth",		SHOOT_EFFECT_EARTH},
+	{"holy",		SHOOT_EFFECT_HOLY},
 	{"suddendeath",		SHOOT_EFFECT_SUDDENDEATH},
 	{"flasharrow",		SHOOT_EFFECT_FLASHARROW},
 	{"flammingarrow",	SHOOT_EFFECT_FLAMMINGARROW},
@@ -1138,20 +1044,20 @@ ShootTypeNames shootTypeNames[] =
 	{"smallearth",		SHOOT_EFFECT_SMALLEARTH},
 	{"eartharrow",		SHOOT_EFFECT_EARTHARROW},
 	{"explosion",		SHOOT_EFFECT_EXPLOSION},
-	{"cake",			SHOOT_EFFECT_CAKE}
+	{"cake",		SHOOT_EFFECT_CAKE}
 };
 
 CombatTypeNames combatTypeNames[] =
 {
-	{"physical",	COMBAT_PHYSICALDAMAGE},
+	{"physical",		COMBAT_PHYSICALDAMAGE},
 	{"energy",		COMBAT_ENERGYDAMAGE},
 	{"earth",		COMBAT_EARTHDAMAGE},
 	{"fire",		COMBAT_FIREDAMAGE},
-	{"undefined",	COMBAT_UNDEFINEDDAMAGE},
-	{"lifedrain",	COMBAT_LIFEDRAIN},
-	{"life drain",	COMBAT_LIFEDRAIN},
-	{"manadrain",	COMBAT_MANADRAIN},
-	{"mana drain",	COMBAT_MANADRAIN},
+	{"undefined",		COMBAT_UNDEFINEDDAMAGE},
+	{"lifedrain",		COMBAT_LIFEDRAIN},
+	{"life drain",		COMBAT_LIFEDRAIN},
+	{"manadrain",		COMBAT_MANADRAIN},
+	{"mana drain",		COMBAT_MANADRAIN},
 	{"healing",		COMBAT_HEALING},
 	{"drown",		COMBAT_DROWNDAMAGE},
 	{"ice",			COMBAT_ICEDAMAGE},
@@ -1161,11 +1067,11 @@ CombatTypeNames combatTypeNames[] =
 
 AmmoTypeNames ammoTypeNames[] =
 {
-	{"spear",			AMMO_SPEAR},
-	{"arrow",			AMMO_ARROW},
+	{"spear",		AMMO_SPEAR},
+	{"arrow",		AMMO_ARROW},
 	{"poisonarrow",		AMMO_ARROW},
 	{"burstarrow",		AMMO_ARROW},
-	{"bolt",			AMMO_BOLT},
+	{"bolt",		AMMO_BOLT},
 	{"powerbolt",		AMMO_BOLT},
 	{"smallstone",		AMMO_STONE},
 	{"largerock",		AMMO_STONE},
@@ -1189,7 +1095,7 @@ AmmoTypeNames ammoTypeNames[] =
 
 AmmoActionNames ammoActionNames[] =
 {
-	{"move",			AMMOACTION_MOVE},
+	{"move",		AMMOACTION_MOVE},
 	{"moveback",		AMMOACTION_MOVEBACK},
 	{"move back",		AMMOACTION_MOVEBACK},
 	{"removecharge",	AMMOACTION_REMOVECHARGE},
@@ -1205,18 +1111,18 @@ FluidTypeNames fluidTypeNames[] =
 	{"blood",		FLUID_BLOOD},
 	{"beer",		FLUID_BEER},
 	{"slime",		FLUID_SLIME},
-	{"lemonade",	FLUID_LEMONADE},
+	{"lemonade",		FLUID_LEMONADE},
 	{"milk",		FLUID_MILK},
 	{"mana",		FLUID_MANA},
 	{"life",		FLUID_LIFE},
 	{"oil",			FLUID_OIL},
 	{"urine",		FLUID_URINE},
-	{"coconutmilk",	FLUID_COCONUTMILK},
-	{"coconut milk",FLUID_COCONUTMILK},
+	{"coconutmilk",		FLUID_COCONUTMILK},
+	{"coconut milk",	FLUID_COCONUTMILK},
 	{"wine",		FLUID_WINE},
 	{"mud",			FLUID_MUD},
-	{"fruitjuice",	FLUID_FRUITJUICE},
-	{"fruit juice",	FLUID_FRUITJUICE},
+	{"fruitjuice",		FLUID_FRUITJUICE},
+	{"fruit juice",		FLUID_FRUITJUICE},
 	{"lava",		FLUID_LAVA},
 	{"rum",			FLUID_RUM},
 	{"swamp",		FLUID_SWAMP},
@@ -1230,35 +1136,22 @@ SkillIdNames skillIdNames[] =
 	{"club",		SKILL_CLUB},
 	{"sword",		SKILL_SWORD},
 	{"axe",			SKILL_AXE},
-	{"distance",	SKILL_DIST},
+	{"distance",		SKILL_DIST},
 	{"dist",		SKILL_DIST},
-	{"shielding",	SKILL_SHIELD},
+	{"shielding",		SKILL_SHIELD},
 	{"shield",		SKILL_SHIELD},
 	{"fishing",		SKILL_FISH},
 	{"fish",		SKILL_FISH},
 	{"level",		SKILL__LEVEL},
-	{"magiclevel",	SKILL__MAGLEVEL},
-	{"magic level",	SKILL__MAGLEVEL},
-	{"experience",	SKILL__EXPERIENCE}
-};
-
-WeaponTypeNames weaponTypeNames[] = {
-	{"",			WEAPON_NONE},
-	{"sword",		WEAPON_SWORD},
-	{"club",		WEAPON_CLUB},
-	{"axe",			WEAPON_AXE},
-	{"distance",	WEAPON_DIST},
-	{"shield",		WEAPON_SHIELD},
-	{"fist",		WEAPON_FIST},
-	{"wand",		WEAPON_WAND},
-	{"ammunition",	WEAPON_AMMO}
+	{"magiclevel",		SKILL__MAGLEVEL},
+	{"magic level",		SKILL__MAGLEVEL}
 };
 
 MagicEffect_t getMagicEffect(const std::string& strValue)
 {
 	for(uint32_t i = 0; i < sizeof(magicEffectNames) / sizeof(MagicEffectNames); ++i)
 	{
-		if(boost::algorithm::iequals(strValue.c_str(), magicEffectNames[i].name))
+		if(!strcasecmp(strValue.c_str(), magicEffectNames[i].name))
 			return magicEffectNames[i].magicEffect;
 	}
 
@@ -1269,7 +1162,7 @@ ShootEffect_t getShootType(const std::string& strValue)
 {
 	for(uint32_t i = 0; i < sizeof(shootTypeNames) / sizeof(ShootTypeNames); ++i)
 	{
-		if(boost::algorithm::iequals(strValue.c_str(), shootTypeNames[i].name))
+		if(!strcasecmp(strValue.c_str(), shootTypeNames[i].name))
 			return shootTypeNames[i].shootType;
 	}
 
@@ -1280,7 +1173,7 @@ CombatType_t getCombatType(const std::string& strValue)
 {
 	for(uint32_t i = 0; i < sizeof(combatTypeNames) / sizeof(CombatTypeNames); ++i)
 	{
-		if(boost::algorithm::iequals(strValue.c_str(), combatTypeNames[i].name))
+		if(!strcasecmp(strValue.c_str(), combatTypeNames[i].name))
 			return combatTypeNames[i].combatType;
 	}
 
@@ -1291,7 +1184,7 @@ Ammo_t getAmmoType(const std::string& strValue)
 {
 	for(uint32_t i = 0; i < sizeof(ammoTypeNames) / sizeof(AmmoTypeNames); ++i)
 	{
-		if(boost::algorithm::iequals(strValue.c_str(), ammoTypeNames[i].name))
+		if(!strcasecmp(strValue.c_str(), ammoTypeNames[i].name))
 			return ammoTypeNames[i].ammoType;
 	}
 
@@ -1302,7 +1195,7 @@ AmmoAction_t getAmmoAction(const std::string& strValue)
 {
 	for(uint32_t i = 0; i < sizeof(ammoActionNames) / sizeof(AmmoActionNames); ++i)
 	{
-		if(boost::algorithm::iequals(strValue.c_str(), ammoActionNames[i].name))
+		if(!strcasecmp(strValue.c_str(), ammoActionNames[i].name))
 			return ammoActionNames[i].ammoAction;
 	}
 
@@ -1313,7 +1206,7 @@ FluidTypes_t getFluidType(const std::string& strValue)
 {
 	for(uint32_t i = 0; i < sizeof(fluidTypeNames) / sizeof(FluidTypeNames); ++i)
 	{
-		if(boost::algorithm::iequals(strValue.c_str(), fluidTypeNames[i].name))
+		if(!strcasecmp(strValue.c_str(), fluidTypeNames[i].name))
 			return fluidTypeNames[i].fluidType;
 	}
 
@@ -1324,100 +1217,11 @@ skills_t getSkillId(const std::string& strValue)
 {
 	for(uint32_t i = 0; i < sizeof(skillIdNames) / sizeof(SkillIdNames); ++i)
 	{
-		if(boost::algorithm::iequals(strValue.c_str(), skillIdNames[i].name))
+		if(!strcasecmp(strValue.c_str(), skillIdNames[i].name))
 			return skillIdNames[i].skillId;
 	}
 
 	return SKILL_FIST;
-}
-
-WeaponType_t getWeaponType(const std::string& strValue)
-{
-	for(uint32_t i = 0; i < sizeof(weaponTypeNames) / sizeof(WeaponTypeNames); ++i)
-	{
-		if(boost::algorithm::iequals(strValue.c_str(), weaponTypeNames[i].name))
-			return weaponTypeNames[i].weaponType;
-	}
-
-	return WEAPON_NONE;
-}
-
-void getCombatDetails(CombatType_t combatType, MagicEffect_t& magicEffect, Color_t& textColor)
-{
-	switch(combatType)
-	{
-		case COMBAT_PHYSICALDAMAGE:
-		{
-			textColor = COLOR_RED;
-			magicEffect = MAGIC_EFFECT_DRAW_BLOOD;
-			break;
-		}
-
-		case COMBAT_ENERGYDAMAGE:
-		{
-			textColor = COLOR_PURPLE;
-			magicEffect = MAGIC_EFFECT_ENERGY_DAMAGE;
-			break;
-		}
-
-		case COMBAT_EARTHDAMAGE:
-		{
-			textColor = COLOR_LIGHTGREEN;
-			magicEffect = MAGIC_EFFECT_POISON_RINGS;
-			break;
-		}
-
-		case COMBAT_DROWNDAMAGE:
-		{
-			textColor = COLOR_LIGHTBLUE;
-			magicEffect = MAGIC_EFFECT_LOSE_ENERGY;
-			break;
-		}
-
-		case COMBAT_FIREDAMAGE:
-		{
-			textColor = COLOR_ORANGE;
-			magicEffect = MAGIC_EFFECT_HITBY_FIRE;
-			break;
-		}
-
-		case COMBAT_ICEDAMAGE:
-		{
-			textColor = COLOR_TEAL;
-			magicEffect = MAGIC_EFFECT_ICEATTACK;
-			break;
-		}
-
-		case COMBAT_HOLYDAMAGE:
-		{
-			textColor = COLOR_YELLOW;
-			magicEffect = MAGIC_EFFECT_HOLYDAMAGE;
-			break;
-		}
-
-		case COMBAT_DEATHDAMAGE:
-		{
-			textColor = COLOR_DARKRED;
-			magicEffect = MAGIC_EFFECT_SMALLCLOUDS;
-			break;
-		}
-
-		case COMBAT_LIFEDRAIN:
-		{
-			textColor = COLOR_RED;
-			magicEffect = MAGIC_EFFECT_WRAPS_RED;
-			break;
-		}
-
-		case COMBAT_MANADRAIN:
-		{
-			textColor = COLOR_BLUE;
-			magicEffect = MAGIC_EFFECT_LOSE_ENERGY;
-		}
-
-		default:
-			break;
-	}
 }
 
 std::string getCombatName(CombatType_t combatType)
@@ -1514,31 +1318,106 @@ std::string getSkillName(uint16_t skillId, bool suffix/* = true*/)
 	return "unknown";
 }
 
-std::string getWeaponName(WeaponType_t weaponType)
+std::string getReason(int32_t reasonId)
 {
-	switch(weaponType)
+	switch(reasonId)
 	{
-		case WEAPON_SWORD:
-			return "sword";
-		case WEAPON_CLUB:
-			return "club";
-		case WEAPON_AXE:
-			return "axe";
-		case WEAPON_DIST:
-			return "distance";
-		case WEAPON_SHIELD:
-			return "shield";
-		case WEAPON_WAND:
-			return "wand";
-		case WEAPON_FIST:
-			return "fist";
-		case WEAPON_AMMO:
-			return "ammunition";
+		case 0:
+			return "Offensive Name";
+		case 1:
+			return "Invalid Name Format";
+		case 2:
+			return "Unsuitable Name";
+		case 3:
+			return "Name Inciting Rule Violation";
+		case 4:
+			return "Offensive Statement";
+		case 5:
+			return "Spamming";
+		case 6:
+			return "Illegal Advertising";
+		case 7:
+			return "Off-Topic Public Statement";
+		case 8:
+			return "Non-English Public Statement";
+		case 9:
+			return "Inciting Rule Violation";
+		case 10:
+			return "Bug Abuse";
+		case 11:
+			return "Game Weakness Abuse";
+		case 12:
+			return "Using Unofficial Software to Play";
+		case 13:
+			return "Hacking";
+		case 14:
+			return "Multi-Clienting";
+		case 15:
+			return "Account Trading or Sharing";
+		case 16:
+			return "Threatening Gamemaster";
+		case 17:
+			return "Pretending to Have Influence on Rule Enforcement";
+		case 18:
+			return "False Report to Gamemaster";
+		case 19:
+			return "Destructive Behaviour";
+		case 20:
+			return "Excessive Unjustified Player Killing";
 		default:
 			break;
 	}
 
-	return "";
+	return "Unknown Reason";
+}
+
+std::string getAction(ViolationAction_t actionId, bool ipBanishment)
+{
+	std::string action = "Unknown";
+	switch(actionId)
+	{
+		case ACTION_NOTATION:
+			action = "Notation";
+			break;
+		case ACTION_NAMEREPORT:
+			action = "Name Report";
+			break;
+		case ACTION_BANISHMENT:
+			action = "Banishment";
+			break;
+		case ACTION_BANREPORT:
+			action = "Name Report + Banishment";
+			break;
+		case ACTION_BANFINAL:
+			action = "Banishment + Final Warning";
+			break;
+		case ACTION_BANREPORTFINAL:
+			action = "Name Report + Banishment + Final Warning";
+			break;
+		case ACTION_STATEMENT:
+			action = "Statement Report";
+			break;
+		//internal use
+		case ACTION_DELETION:
+			action = "Deletion";
+			break;
+		case ACTION_NAMELOCK:
+			action = "Name Lock";
+			break;
+		case ACTION_BANLOCK:
+			action = "Name Lock + Banishment";
+			break;
+		case ACTION_BANLOCKFINAL:
+			action = "Name Lock + Banishment + Final Warning";
+			break;
+		default:
+			break;
+	}
+
+	if(ipBanishment)
+		action += " + IP Banishment";
+
+	return action;
 }
 
 std::string parseVocationString(StringVec vocStringVec)
@@ -1678,7 +1557,7 @@ uint32_t adlerChecksum(uint8_t* data, size_t length)
 		a %= adler;
 		b %= adler;
 	}
-
+	
 	return (b << 16) | a;
 }
 
@@ -1686,9 +1565,8 @@ std::string getFilePath(FileType_t type, std::string name/* = ""*/)
 {
 	#ifdef __FILESYSTEM_HIERARCHY_STANDARD__
 	std::string path = "/var/lib/tfs/";
-	#else
-	std::string path = g_config.getString(ConfigManager::DATA_DIRECTORY);
 	#endif
+	std::string path = g_config.getString(ConfigManager::DATA_DIRECTORY);
 	switch(type)
 	{
 		case FILE_TYPE_OTHER:

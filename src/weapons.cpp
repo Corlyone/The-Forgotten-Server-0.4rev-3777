@@ -283,13 +283,10 @@ int32_t Weapon::playerWeaponCheck(Player* player, Creature* target) const
 	if(playerPos.z != targetPos.z)
 		return 0;
 
-	const ItemType& it = Item::items[id];
+	const ItemType& it = Item::items[getID()];
 	int32_t range = it.shootRange;
 	if(it.weaponType == WEAPON_AMMO)
-	{
-		if(Item* item = player->getWeapon(true))
-			range = item->getShootRange();
-	}
+		range = player->getShootRange();
 
 	if(std::max(std::abs(playerPos.x - targetPos.x), std::abs(playerPos.y - targetPos.y)) > range)
 		return 0;
@@ -312,41 +309,23 @@ int32_t Weapon::playerWeaponCheck(Player* player, Creature* target) const
 	if(!vocWeaponMap.empty() && vocWeaponMap.find(player->getVocationId()) == vocWeaponMap.end())
 		return 0;
 
-	int32_t modifier = 100;
+	int32_t damageModifier = 100;
 	if(player->getLevel() < getReqLevel())
-	{
-		if(!isWieldedUnproperly())
-			return 0;
-
-		double penalty = (getReqLevel() - player->getLevel()) * 0.02;
-		if(penalty > 0.5)
-			penalty = 0.5;
-
-		modifier -= (int32_t)(modifier * penalty);
-	}
+		damageModifier = (isWieldedUnproperly() ? damageModifier / 2 : 0);
 
 	if(player->getMagicLevel() < getReqMagLv())
-	{
-		if(!isWieldedUnproperly())
-			return 0;
+		damageModifier = (isWieldedUnproperly() ? damageModifier / 2 : 0);
 
-		double penalty = (getReqMagLv() - player->getMagicLevel()) * 0.02;
-		if(penalty > 0.5)
-			penalty = 0.5;
-
-		modifier -= (int32_t)(modifier * penalty);
-	}
-
-	return modifier;
+	return damageModifier;
 }
 
 bool Weapon::useWeapon(Player* player, Item* item, Creature* target) const
 {
-	int32_t modifier = playerWeaponCheck(player, target);
-	if(!modifier)
+	int32_t damageModifier = playerWeaponCheck(player, target);
+	if(!damageModifier)
 		return false;
 
-	return internalUseWeapon(player, item, target, modifier);
+	return internalUseWeapon(player, item, target, damageModifier);
 }
 
 bool Weapon::useFist(Player* player, Creature* target)
@@ -360,7 +339,7 @@ bool Weapon::useFist(Player* player, Creature* target)
 	int32_t attackSkill = player->getSkill(SKILL_FIST, SKILL_LEVEL), attackValue = g_config.getNumber(ConfigManager::FIST_BASE_ATTACK);
 
 	double maxDamage = Weapons::getMaxWeaponDamage(player->getLevel(), attackSkill, attackValue, attackFactor);
-	if(g_config.getNumber(ConfigManager::CRITICAL_HIT_CHANCE) >= random_range(1, 100))
+	if(random_range(1, 100) < g_config.getNumber(ConfigManager::CRITICAL_HIT_CHANCE))
 	{
 		maxDamage = std::pow(maxDamage, g_config.getDouble(ConfigManager::CRITICAL_HIT_MUL));
 		player->sendCritical();
@@ -385,7 +364,7 @@ bool Weapon::useFist(Player* player, Creature* target)
 	return true;
 }
 
-bool Weapon::internalUseWeapon(Player* player, Item* item, Creature* target, int32_t modifier) const
+bool Weapon::internalUseWeapon(Player* player, Item* item, Creature* target, int32_t damageModifier) const
 {
 	if(isScripted())
 	{
@@ -396,12 +375,8 @@ bool Weapon::internalUseWeapon(Player* player, Item* item, Creature* target, int
 	}
 	else
 	{
-		CombatParams _params = params;
-		_params.element.type = item->getElementType();
-		_params.element.damage = getWeaponElementDamage(player, item);
-
-		int32_t damage = (getWeaponDamage(player, target, item) * modifier) / 100;
-		Combat::doCombatHealth(player, target, damage, damage, _params);
+		int32_t damage = (getWeaponDamage(player, target, item) * damageModifier) / 100;
+		Combat::doCombatHealth(player, target, damage, damage, params);
 	}
 
 	onUsedAmmo(player, item, target->getTile());
@@ -434,20 +409,20 @@ void Weapon::onUsedWeapon(Player* player, Item* item, Tile*) const
 	if(!player->hasFlag(PlayerFlag_NotGainSkill))
 	{
 		skills_t skillType;
-		uint64_t skillPoint = 0;
+		uint32_t skillPoint = 0;
 		if(getSkillType(player, item, skillType, skillPoint))
 			player->addSkillAdvance(skillType, skillPoint);
 	}
 
 	if(!player->hasFlag(PlayerFlag_HasNoExhaustion) && exhaustion > 0)
-		player->addExhaust(exhaustion, EXHAUST_MELEE);
+		player->addExhaust(exhaustion, EXHAUST_COMBAT);
 
 	int32_t manaCost = getManaCost(player);
 	if(manaCost > 0)
 	{
 		player->changeMana(-manaCost);
 		if(!player->hasFlag(PlayerFlag_NotGainMana) && (player->getZone() != ZONE_HARDCORE
-			|| g_config.getBool(ConfigManager::PVPZONE_ADDMANASPENT)))
+			|| !g_config.getBool(ConfigManager::PVPZONE_ADDMANASPENT)))
 			player->addManaSpent(manaCost);
 	}
 
@@ -507,9 +482,7 @@ bool Weapon::executeUseWeapon(Player* player, const LuaVariant& var) const
 			scriptstream << "local cid = " << env->addThing(player) << std::endl;
 			env->streamVariant(scriptstream, "var", var);
 
-			if(m_scriptData)
-				scriptstream << *m_scriptData;
-
+			scriptstream << m_scriptData;
 			bool result = true;
 			if(m_interface->loadBuffer(scriptstream.str()))
 			{
@@ -550,32 +523,52 @@ bool Weapon::executeUseWeapon(Player* player, const LuaVariant& var) const
 }
 
 WeaponMelee::WeaponMelee(LuaInterface* _interface):
-	Weapon(_interface) {}
+	Weapon(_interface)
+{
+	elementType = COMBAT_NONE;
+	elementDamage = 0;
+}
+
+bool WeaponMelee::configureWeapon(const ItemType& it)
+{
+	elementType = it.abilities.elementType;
+	elementDamage = it.abilities.elementDamage;
+	return Weapon::configureWeapon(it);
+}
 
 bool WeaponMelee::useWeapon(Player* player, Item* item, Creature* target) const
 {
-	int32_t modifier = playerWeaponCheck(player, target);
-	if(!modifier)
+	if(!Weapon::useWeapon(player, item, target))
 		return false;
 
-	return internalUseWeapon(player, item, target, modifier);
+	if(elementDamage && elementType != COMBAT_NONE)
+	{
+		CombatParams element;
+		element.combatType = elementType;
+
+		int32_t damage = getElementDamage(player, item);
+		Combat::doCombatHealth(player, target, damage, damage, element);
+	}
+
+	return true;
 }
 
 bool WeaponMelee::getSkillType(const Player* player, const Item* item,
-	skills_t& skill, uint64_t& skillPoint) const
+	skills_t& skill, uint32_t& skillpoint) const
 {
-	skillPoint = 0;
+	skillpoint = 0;
 	if(player->getAddAttackSkill())
 	{
 		switch(player->getLastAttackBlockType())
 		{
 			case BLOCK_ARMOR:
 			case BLOCK_NONE:
-				skillPoint = 1;
+				skillpoint = 1;
 				break;
 
 			case BLOCK_DEFENSE:
 			default:
+				skillpoint = 0;
 				break;
 		}
 	}
@@ -616,11 +609,11 @@ bool WeaponMelee::getSkillType(const Player* player, const Item* item,
 int32_t WeaponMelee::getWeaponDamage(const Player* player, const Creature*, const Item* item, bool maxDamage /*= false*/) const
 {
 	int32_t attackSkill = player->getWeaponSkill(item), attackValue = std::max((int32_t)0,
-		(int32_t(item->getAttack() + item->getExtraAttack()) - item->getElementDamage()));
+		(int32_t(item->getAttack() + item->getExtraAttack()) - elementDamage));
 	float attackFactor = player->getAttackFactor();
 
 	double maxValue = Weapons::getMaxWeaponDamage(player->getLevel(), attackSkill, attackValue, attackFactor);
-	if(g_config.getNumber(ConfigManager::CRITICAL_HIT_CHANCE) >= random_range(1, 100))
+	if(random_range(1, 100) < g_config.getNumber(ConfigManager::CRITICAL_HIT_CHANCE))
 	{
 		maxValue = std::pow(maxValue, g_config.getDouble(ConfigManager::CRITICAL_HIT_MUL));
 		player->sendCritical();
@@ -637,29 +630,30 @@ int32_t WeaponMelee::getWeaponDamage(const Player* player, const Creature*, cons
 	return -random_range(0, ret, DISTRO_NORMAL);
 }
 
-int32_t WeaponMelee::getWeaponElementDamage(const Player* player, const Item* item, bool maxDamage/* = false*/) const
+int32_t WeaponMelee::getElementDamage(const Player* player, const Item* item) const
 {
-	int32_t attackSkill = player->getWeaponSkill(item), attackValue = item->getElementDamage();
+	int32_t attackSkill = player->getWeaponSkill(item);
 	float attackFactor = player->getAttackFactor();
 
-	double maxValue = Weapons::getMaxWeaponDamage(player->getLevel(), attackSkill, attackValue, attackFactor);
+	double maxValue = Weapons::getMaxWeaponDamage(player->getLevel(), attackSkill, elementDamage, attackFactor);
+	if(random_range(1, 100) < g_config.getNumber(ConfigManager::CRITICAL_HIT_CHANCE))
+	{
+		maxValue = std::pow(maxValue, g_config.getDouble(ConfigManager::CRITICAL_HIT_MUL));
+		player->sendCritical();
+	}
 
 	Vocation* vocation = player->getVocation();
 	if(vocation && vocation->getMultiplier(MULTIPLIER_MELEE) != 1.0)
 		maxValue *= vocation->getMultiplier(MULTIPLIER_MELEE);
 
-	int32_t ret = (int32_t)std::floor(maxValue);
-	if(maxDamage)
-		return -ret;
-
-	return -random_range(0, ret, DISTRO_NORMAL);
+	return -random_range(0, (int32_t)std::floor(maxValue), DISTRO_NORMAL);
 }
 
 WeaponDistance::WeaponDistance(LuaInterface* _interface):
 	Weapon(_interface)
 {
 	hitChance = -1;
-	maxHitChance = breakChance = attack = 0;
+	maxHitChance = breakChance = ammoAttackValue = 0;
 	swing = params.blockedByShield = false;
 }
 
@@ -683,7 +677,7 @@ bool WeaponDistance::configureWeapon(const ItemType& it)
 		ammoAction = it.ammoAction;
 
 	params.effects.distance = it.shootType;
-	attack = it.attack;
+	ammoAttackValue = it.attack;
 	return Weapon::configureWeapon(it);
 }
 
@@ -704,8 +698,8 @@ int32_t WeaponDistance::playerWeaponCheck(Player* player, Creature* target) cons
 
 bool WeaponDistance::useWeapon(Player* player, Item* item, Creature* target) const
 {
-	int32_t modifier = playerWeaponCheck(player, target);
-	if(!modifier)
+	int32_t damageModifier = playerWeaponCheck(player, target);
+	if(!damageModifier)
 		return false;
 
 	int32_t chance = hitChance;
@@ -843,19 +837,19 @@ bool WeaponDistance::useWeapon(Player* player, Item* item, Creature* target) con
 			Tile* tmpTile = NULL;
 			for(std::vector<std::pair<int32_t, int32_t> >::iterator it = destList.begin(); it != destList.end(); ++it)
 			{
-				if(!(tmpTile = g_game.getTile(destPos.x + it->first, destPos.y + it->second, destPos.z))
-					|| tmpTile->hasProperty(IMMOVABLEBLOCKSOLID) || !tmpTile->ground)
-					continue;
-
-				destTile = tmpTile;
-				break;
+				if((tmpTile = g_game.getTile(destPos.x + it->first, destPos.y + it->second, destPos.z))
+					&& !tmpTile->hasProperty(IMMOVABLEBLOCKSOLID) && tmpTile->ground)
+				{
+					destTile = tmpTile;
+					break;
+				}
 			}
 		}
 
 		Weapon::internalUseWeapon(player, item, destTile);
 	}
 	else
-		Weapon::internalUseWeapon(player, item, target, modifier);
+		Weapon::internalUseWeapon(player, item, target, damageModifier);
 
 	return true;
 }
@@ -865,15 +859,15 @@ void WeaponDistance::onUsedAmmo(Player* player, Item* item, Tile* destTile) cons
 	if(!g_config.getBool(ConfigManager::REMOVE_WEAPON_AMMO))
 		return;
 
-	if(ammoAction == AMMOACTION_MOVEBACK && breakChance > 0 && random_range(1, 100) <= breakChance)
-		g_game.transformItem(item, item->getID(), std::max((int32_t)0, (int32_t)item->getItemCount() - 1));
+	if(ammoAction == AMMOACTION_MOVEBACK && breakChance > 0 && random_range(1, 100) < breakChance)
+		g_game.transformItem(item, item->getID(), std::max(0, item->getItemCount() - 1));
 	else
 		Weapon::onUsedAmmo(player, item, destTile);
 }
 
 int32_t WeaponDistance::getWeaponDamage(const Player* player, const Creature* target, const Item* item, bool maxDamage /*= false*/) const
 {
-	int32_t attackValue = attack;
+	int32_t attackValue = ammoAttackValue;
 	if(item->getWeaponType() == WEAPON_AMMO)
 	{
 		if(Item* bow = const_cast<Player*>(player)->getWeapon(true))
@@ -884,9 +878,9 @@ int32_t WeaponDistance::getWeaponDamage(const Player* player, const Creature* ta
 	float attackFactor = player->getAttackFactor();
 
 	double maxValue = Weapons::getMaxWeaponDamage(player->getLevel(), attackSkill, attackValue, attackFactor);
-	if(g_config.getNumber(ConfigManager::CRITICAL_HIT_CHANCE) >= random_range(1, 100))
+	if(random_range(1, 100) < g_config.getNumber(ConfigManager::CRITICAL_HIT_CHANCE))
 	{
-		maxValue *= g_config.getDouble(ConfigManager::CRITICAL_HIT_MUL);
+		maxValue = std::pow(maxValue, g_config.getDouble(ConfigManager::CRITICAL_HIT_MUL));
 		player->sendCritical();
 	}
 
@@ -911,28 +905,29 @@ int32_t WeaponDistance::getWeaponDamage(const Player* player, const Creature* ta
 }
 
 bool WeaponDistance::getSkillType(const Player* player, const Item*,
-	skills_t& skill, uint64_t& skillPoint) const
+	skills_t& skill, uint32_t& skillpoint) const
 {
 	skill = SKILL_DIST;
-	skillPoint = 0;
+	skillpoint = 0;
+
 	if(player->getAddAttackSkill())
 	{
 		switch(player->getLastAttackBlockType())
 		{
 			case BLOCK_NONE:
-				skillPoint = 2;
+				skillpoint = 2;
 				break;
 
 			case BLOCK_ARMOR:
-				skillPoint = 1;
+				skillpoint = 1;
 				break;
 
 			case BLOCK_DEFENSE:
 			default:
+				skillpoint = 0;
 				break;
 		}
 	}
-
 	return true;
 }
 

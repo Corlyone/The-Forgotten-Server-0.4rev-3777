@@ -49,13 +49,10 @@ inline SchedulerTask* createSchedulerTask(uint32_t delay, const boost::function<
 	return new SchedulerTask(delay, f);
 }
 
-class LessTask
+class lessTask : public std::binary_function<SchedulerTask*&, SchedulerTask*&, bool>
 {
-public:
-	bool operator()(const SchedulerTask* t1, const SchedulerTask* t2) const
-	{
-		return (*t1) < (*t2);
-	}
+	public:
+		bool operator()(SchedulerTask*& t1, SchedulerTask*& t2) {return (*t1) < (*t2);}
 };
 
 typedef std::set<uint32_t> EventIds;
@@ -74,9 +71,8 @@ class Scheduler
 
 		void stop();
 		void shutdown();
-		void exit() {m_thread.join();}
 
-		void schedulerThread();
+		static void schedulerThread(void* p);
 
 	protected:
 		Scheduler();
@@ -90,11 +86,10 @@ class Scheduler
 		uint32_t m_lastEvent;
 		EventIds m_eventIds;
 
-		boost::thread m_thread;
 		boost::mutex m_eventLock;
 		boost::condition_variable m_eventSignal;
 
-		std::priority_queue<SchedulerTask*, std::vector<SchedulerTask*>, LessTask > m_eventList;
+		std::priority_queue<SchedulerTask*, std::vector<SchedulerTask*>, lessTask > m_eventList;
 		static SchedulerState m_threadState;
 };
 #endif

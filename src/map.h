@@ -14,23 +14,23 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////////////////////////////////////////////////////////////////////////
-
+ 
 #ifndef __MAP__
 #define __MAP__
 #include "tools.h"
-
+ 
 #include "fileloader.h"
 #include "position.h"
- 
+
 #include "waypoints.h"
 #include "tile.h"
-
+ 
 class Creature;
 class Player;
 class Game;
 class Tile;
 class Map;
-
+ 
 struct FindPathParams;
 struct AStarNode
 {
@@ -38,10 +38,10 @@ struct AStarNode
 	AStarNode* parent;
 	int32_t f, g, h;
 };
-
+ 
 using boost::shared_ptr;
 #define MAP_MAX_LAYERS 16
- 
+
 #define MAX_NODES 512
 #define GET_NODE_INDEX(a) (a - &nodes[0])
 
@@ -59,7 +59,7 @@ class AStarNodes
  
 		uint32_t countOpenNodes();
 		uint32_t countClosedNodes();
-
+ 
 		AStarNode* getBestNode();
 		AStarNode* createOpenNode();
 		AStarNode* getNodeInList(uint16_t x, uint16_t y);
@@ -70,14 +70,14 @@ class AStarNodes
 		int32_t getMapWalkCost(const Creature* creature, AStarNode* node,
 			const Tile* neighbourTile, const Position& neighbourPos);
 		static int32_t getTileWalkCost(const Creature* creature, const Tile* tile);
- 
+
 	private:
 		AStarNode nodes[MAX_NODES];
- 
+
 		std::bitset<MAX_NODES> openNodes;
 		uint32_t curNode;
 };
- 
+
 template<class T> class lessPointer: public std::binary_function<T*, T*, bool>
 {
 	public:
@@ -87,7 +87,7 @@ template<class T> class lessPointer: public std::binary_function<T*, T*, bool>
 #define FLOOR_BITS 3
 #define FLOOR_SIZE (1 << FLOOR_BITS)
 #define FLOOR_MASK (FLOOR_SIZE - 1)
-
+ 
 struct Floor
 {
 	Floor();
@@ -125,10 +125,10 @@ class QTreeLeafNode : public QTreeNode
 		virtual ~QTreeLeafNode();
 
 		Floor* createFloor(uint16_t z);
-		Floor* getFloor(uint16_t z) {return m_array[z];}
+		Floor* getFloor(uint16_t z){return m_array[z];}
 
-		QTreeLeafNode* stepSouth() {return m_leafS;}
-		QTreeLeafNode* stepEast() {return m_leafE;}
+		QTreeLeafNode* stepSouth(){return m_leafS;}
+		QTreeLeafNode* stepEast(){return m_leafE;}
  
 		void addCreature(Creature* c);
 		void removeCreature(Creature* c);
@@ -174,11 +174,6 @@ class Map
 		* \returns true if the map was saved successfully
 		*/
 		bool saveMap();
-
-		/**
-		* \returns true if updating house auctions completed
-		*/
-		bool updateAuctions();
 
 		/**
 		* Get a single tile.

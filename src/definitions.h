@@ -20,38 +20,26 @@
 
 #define CLIENT_VERSION_MIN 860
 #define CLIENT_VERSION_MAX 860
-#define CLIENT_VERSION_STRING "Only clients with protocol 8.60 allowed!"
+#define CLIENT_VERSION_STRING "Only clients with protocol 8.6 allowed!"
 
-#define CLIENT_VERSION_DAT 0
-#define CLIENT_VERSION_SPR 0
-#define CLIENT_VERSION_PIC 0
-//#define CLIENT_VERSION_DATA
-
-#define SOFTWARE_NAME "TFS 0.4 - Revisado por NvSo"
-#define SOFTWARE_VERSION "0.1"
-#define SOFTWARE_CODENAME "Crying Damson"
-#define SOFTWARE_DEVELOPERS "Elf, Talaturen, Dalkon, BeniS, Tryller and Kornholijo"
-#define SOFTWARE_PROTOCOL "8.60"
-
-#define VERSION_CHECK ""
-#define VERSION_PATCH 0
-#define VERSION_TIMESTAMP 1357518165
-#define VERSION_BUILD 0
-#define VERSION_DATABASE 35
+#define SOFTWARE_NAME "The Forgotten Server"
+#define SOFTWARE_VERSION "0.4"
+#define SOFTWARE_PROTOCOL "8.6"
+#define VERSION_DATABASE 25
 
 #undef MULTI_SQL_DRIVERS
-#define SQL_DRIVERS __USE_SQLITE__+__USE_MYSQL__+__USE_PGSQL__
+#define SQL_DRIVERS __USE_SQLITE__+__USE_MYSQL__
 
 #if SQL_DRIVERS > 1
 	#define MULTI_SQL_DRIVERS
 #endif
 
-#define MAX_RAND_RANGE 10000000
 #ifndef __FUNCTION__
 	#define	__FUNCTION__ __func__
 #endif
 
 #define BOOST_ASIO_ENABLE_CANCELIO 1
+#define BOOST_FILESYSTEM_VERSION 3
 #ifdef _MSC_VER
 	#define __PRETTY_FUNCTION__ __FUNCDNAME__
 	#ifndef NOMINMAX
@@ -64,6 +52,16 @@
 	#endif
 
 	#include <cstring>
+	inline int strcasecmp(const char * s1, const char * s2)
+	{
+		return ::_stricmp(s1, s2);
+	}
+
+	inline int strncasecmp(const char * s1, const char * s2, size_t n)
+	{
+		return ::_strnicmp(s1, s2, n);
+	}
+
 	#define atoll _atoi64
 	#if VISUALC_VERSION < 10
 		typedef unsigned long long uint64_t;
@@ -76,12 +74,19 @@
 		typedef signed char int8_t;
 	#endif
 
-	#pragma warning(disable:4786) // msvc too long debug names in stl
-	#pragma warning(disable:4250) // 'class1' : inherits 'class2::member' via dominance
-	#pragma warning(disable:4244)
-	#pragma warning(disable:4267)
 	#pragma warning(disable:4018)
+	#pragma warning(disable:4099)
+	#pragma warning(disable:4146)
+	#pragma warning(disable:4224)
+	#pragma warning(disable:4244)
+	#pragma warning(disable:4250) // 'class1' : inherits 'class2::member' via dominance
+	#pragma warning(disable:4267)
+	#pragma warning(disable:4273)
+	#pragma warning(disable:4305)
 	#pragma warning(disable:4309)
+	#pragma warning(disable:4319)
+	#pragma warning(disable:4786) // msvc too long debug names in stl
+	#pragma warning(disable:4800)
 	#pragma warning(disable:4996) // '_ftime64' : this function or variable may be unsafe
 
 	#ifndef _WIN32
@@ -134,7 +139,7 @@
 	//Windows Vista	0x0600
 	//Windows Seven 0x0601
 
-	#define _WIN32_WINNT 0x0501
+	#define _WIN32_WINNT 0x0502
 #elif defined __GNUC__
 	#define __USE_ZLIB__
 #endif
