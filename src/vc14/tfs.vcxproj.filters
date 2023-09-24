@@ -75,9 +75,6 @@
     <ClInclude Include="..\databasemysqlpp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\databasepgsql.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\databasesqlite.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -326,12 +323,6 @@
     <ClCompile Include="..\databasemysql.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\databasemysqlpp.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\databasepgsql.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\databasesqlite.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -414,9 +405,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\npc.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\otpch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\otserv.cpp">
@@ -507,6 +495,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\rsa.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\otpch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
